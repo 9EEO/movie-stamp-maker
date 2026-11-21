@@ -1,3 +1,4 @@
+import { Attribution } from './Attribution';
 import { useApp } from './context';
 import { MadeGallery } from './MadeGallery';
 import { QueueSheets } from './QueueSheets';
@@ -41,6 +42,8 @@ export function Home() {
       <QueueSheets />
 
       <MadeGallery />
+
+      <Attribution />
     </div>
   );
 }

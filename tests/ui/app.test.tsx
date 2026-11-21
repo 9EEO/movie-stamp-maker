@@ -30,6 +30,17 @@ test('home shows title, settings button and sections', async () => {
   expect(screen.getByRole('region', { name: '만든 우표' })).toBeTruthy();
 });
 
+test('home credits TMDB with its logo and the notice its API terms require', async () => {
+  render(<App />);
+  const credit = await screen.findByRole('contentinfo');
+  const logo = credit.querySelector('img');
+  expect(logo?.getAttribute('alt')).toBe('TMDB');
+  expect(logo?.getAttribute('src')).toMatch(/tmdb-logo\.svg$/);
+  expect(credit.textContent).toContain(
+    'This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.',
+  );
+});
+
 test('adding a search result opens the crop overlay, and back closes only the overlay', async () => {
   await saveSettings({ tmdbKey: 'k' });
   const pushState = vi.spyOn(history, 'pushState');

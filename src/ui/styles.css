@@ -793,3 +793,21 @@ img {
   flex: 1;
   min-width: 0;
 }
+
+/* TMDB 출처 표시 */
+.attribution {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.attribution p {
+  margin: 6px 0 0;
+}
+
+.attribution-logo {
+  height: 12px;
+}
