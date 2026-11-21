@@ -4,6 +4,7 @@ import { type Tmdb, createTmdb } from '../tmdb/client';
 import { AppContext, type AppContextValue, type Overlay } from './context';
 import { CropEditor } from './CropEditor';
 import { Home } from './Home';
+import { StampDetail } from './MadeGallery';
 import { OverlayFrame } from './OverlayFrame';
 import { ToastHost } from './Toast';
 
@@ -45,7 +46,7 @@ function OverlayView({ overlay, close }: { overlay: Overlay; close(): void }) {
     case 'crop':
       return <CropEditor key={overlay.stampId} stampId={overlay.stampId} onDone={close} />;
     case 'detail':
-      return <OverlayFrame title="우표 정보">준비 중</OverlayFrame>;
+      return <StampDetail key={overlay.stampId} stampId={overlay.stampId} />;
     case 'settings':
       return <OverlayFrame title="설정">준비 중</OverlayFrame>;
   }

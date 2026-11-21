@@ -598,3 +598,68 @@ img {
 .modal p {
   margin: 0 0 12px;
 }
+
+/* 만든 우표 */
+.gallery-search {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.gallery {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.gallery-item {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.detail {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.detail-stamp {
+  width: min(70vw, 260px);
+}
+
+.detail-title {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 12px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.detail-meta dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.detail-actions {
+  display: grid;
+  width: 100%;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn.danger {
+  color: #b42318;
+}

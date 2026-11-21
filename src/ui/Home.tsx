@@ -1,16 +1,10 @@
-import { useEffect, useState } from 'preact/hooks';
-import { listMade } from '../data/db';
 import { useApp } from './context';
+import { MadeGallery } from './MadeGallery';
 import { QueueSheets } from './QueueSheets';
 import { Search } from './Search';
 
 export function Home() {
-  const { open, refresh, tmdb, version } = useApp();
-  const [madeCount, setMadeCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    listMade().then((m) => setMadeCount(m.length));
-  }, [version]);
+  const { open, refresh, tmdb } = useApp();
 
   return (
     <div class="home">
@@ -34,10 +28,7 @@ export function Home() {
 
       <QueueSheets />
 
-      <section class="section" aria-label="만든 우표">
-        <h2>만든 우표</h2>
-        <p class="muted">{madeCount === null ? '' : `${madeCount}개`}</p>
-      </section>
+      <MadeGallery />
     </div>
   );
 }
