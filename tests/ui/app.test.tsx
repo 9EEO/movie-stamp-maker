@@ -5,7 +5,12 @@ import type { Tmdb } from '../../src/tmdb/client';
 import { App } from '../../src/ui/App';
 import { resetDb } from '../helpers/resetDb';
 
-beforeEach(resetDb);
+beforeEach(async () => {
+  await resetDb();
+  // 조정 화면이 포스터를 받으려 할 때 실제 네트워크로 나가지 않게 한다
+  vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('offline'))));
+});
+afterEach(() => vi.unstubAllGlobals());
 afterAll(closeDb);
 
 const fakeTmdb: Tmdb = {

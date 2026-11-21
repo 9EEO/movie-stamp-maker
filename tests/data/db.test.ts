@@ -10,6 +10,7 @@ import {
   findByTmdbId,
   getBlob,
   getSettings,
+  getStamp,
   listMade,
   listQueue,
   markMade,
@@ -38,6 +39,12 @@ test('addStamp appends to the queue with increasing queueOrder', async () => {
   expect(a.id).not.toBe(b.id);
   expect(typeof a.createdAt).toBe('number');
   expect(titles(await listQueue())).toEqual(['a', 'b', 'c']);
+});
+
+test('getStamp returns one stamp or undefined', async () => {
+  const a = await tmdb('a');
+  expect(await getStamp(a.id)).toEqual(a);
+  expect(await getStamp('missing')).toBeUndefined();
 });
 
 test('updateStamp patches fields', async () => {

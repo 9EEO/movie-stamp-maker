@@ -78,6 +78,11 @@ export async function addStamp(input: NewStamp): Promise<Stamp> {
   return stamp;
 }
 
+export async function getStamp(id: string): Promise<Stamp | undefined> {
+  const db = await getDb();
+  return db.get('stamps', id);
+}
+
 export async function updateStamp(id: string, patch: Partial<Stamp>): Promise<void> {
   const db = await getDb();
   const tx = db.transaction('stamps', 'readwrite');

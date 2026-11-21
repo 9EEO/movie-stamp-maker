@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { type Settings, getSettings } from '../data/db';
 import { type Tmdb, createTmdb } from '../tmdb/client';
 import { AppContext, type AppContextValue, type Overlay } from './context';
+import { CropEditor } from './CropEditor';
 import { Home } from './Home';
 import { OverlayFrame } from './OverlayFrame';
 import { ToastHost } from './Toast';
@@ -39,10 +40,10 @@ export function useOverlays() {
   return { stack, open, close };
 }
 
-function OverlayView({ overlay }: { overlay: Overlay }) {
+function OverlayView({ overlay, close }: { overlay: Overlay; close(): void }) {
   switch (overlay.kind) {
     case 'crop':
-      return <OverlayFrame title="우표 조정">준비 중</OverlayFrame>;
+      return <CropEditor key={overlay.stampId} stampId={overlay.stampId} onDone={close} />;
     case 'detail':
       return <OverlayFrame title="우표 정보">준비 중</OverlayFrame>;
     case 'settings':
@@ -82,7 +83,7 @@ export function App({ makeTmdb = (key) => createTmdb(key) }: Props) {
       <div class="app" aria-hidden={top ? 'true' : undefined}>
         <Home />
       </div>
-      {top && <OverlayView overlay={top} />}
+      {top && <OverlayView overlay={top} close={close} />}
       <ToastHost />
     </AppContext.Provider>
   );
