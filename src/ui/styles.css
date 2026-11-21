@@ -1,0 +1,336 @@
+:root {
+  --bg: #f4efe6;
+  --surface: #fffdf8;
+  --text: #1f1a17;
+  --muted: #7a6f66;
+  --line: #e2d9cc;
+  --accent: #b4441f;
+  --accent-text: #fff;
+  --warn: #9a5b00;
+  --radius: 12px;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* 폰 화면 그대로, 넓은 화면에서는 가운데 정렬 */
+.app,
+.overlay {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.home {
+  padding: 0 16px 96px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  background: var(--bg);
+}
+
+.topbar h1,
+.topbar h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.icon-btn:active {
+  background: var(--line);
+}
+
+.btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.section {
+  margin-top: 24px;
+}
+
+.section h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+/* 검색 */
+.search-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.notice {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.notice p {
+  margin: 0 0 8px;
+}
+
+.upload-form {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+}
+
+.upload-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.upload-form input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.results {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.result:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.result-thumb {
+  flex: none;
+  width: 46px;
+  height: 69px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--line);
+}
+
+.no-poster {
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.result-text {
+  flex: 1;
+  display: grid;
+}
+
+.result-title {
+  font-weight: 600;
+}
+
+.result-year {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3dfc9;
+  color: var(--warn);
+  font-size: 0.8rem;
+}
+
+/* 오버레이 */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: 0 16px;
+}
+
+.overlay-body {
+  flex: 1;
+  overflow: auto;
+  padding-bottom: 24px;
+}
+
+/* 토스트 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 10px 10px 10px 16px;
+  border-radius: var(--radius);
+  background: #2b2420;
+  color: #fff;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.2);
+}
+
+.toast-action {
+  border: 0;
+  background: transparent;
+  color: #ffb38a;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+/*
+ * 우표 썸네일: 칼선 비율(31.7:38.1) 흰 종이 + 톱니 가장자리.
+ * 네 모서리 쪽 1/4 원 마스크를 격자로 반복해 교차(intersect)하면 격자점마다 구멍이 생기고,
+ * 가장자리 격자점은 반원 톱니가 된다. 안쪽 구멍은 content-box 마스크와 합쳐 메운다.
+ */
+.stamp {
+  --hole: 2.6px;
+  --pitch: 9px;
+  position: relative;
+  aspect-ratio: 31.7 / 38.1;
+  padding: 6px;
+  background: #fff;
+  --q: #0000 var(--hole), #000 calc(var(--hole) + 0.5px);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    radial-gradient(circle at 0 0, var(--q)) 0 0 / var(--pitch) var(--pitch) round,
+    radial-gradient(circle at 100% 0, var(--q)) 0 0 / var(--pitch) var(--pitch) round,
+    radial-gradient(circle at 0 100%, var(--q)) 0 0 / var(--pitch) var(--pitch) round,
+    radial-gradient(circle at 100% 100%, var(--q)) 0 0 / var(--pitch) var(--pitch) round;
+  mask-composite: add, intersect, intersect, intersect;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.15));
+}
+
+.stamp-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.stamp-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stamp-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 4px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+}
