@@ -95,3 +95,20 @@ test('existing tmdbId shows 이미 있음 and can still be added', async () => {
   expect(queue[1]).toMatchObject({ tmdbId: 129, title: '센과 치히로의 행방불명', year: 2001, posterPath: '/abc.jpg' });
   expect(onAdded).toHaveBeenCalledWith(queue[1].id);
 });
+
+test('poster thumbnails are requested in CORS mode so the image cache stays usable for printing', async () => {
+  setup(fakeTmdb(async () => results));
+  typeQuery('x');
+  const row = (await screen.findByText('센과 치히로의 행방불명')).closest('button')!;
+  expect(row.querySelector('img')?.getAttribute('crossorigin')).toBe('anonymous');
+});
+
+test('a photo that cannot be opened shows an error and adds nothing', async () => {
+  setup(null);
+  const input = document.querySelector('input[type=file]') as HTMLInputElement;
+  fireEvent.change(input, { target: { files: [new File(['not an image'], 'broken.heic', { type: 'image/heic' })] } });
+  fireEvent.click(await screen.findByRole('button', { name: '추가' }));
+  expect(await screen.findByText('이 사진을 열 수 없어요. JPG나 PNG로 다시 골라 주세요')).toBeTruthy();
+  expect(await listQueue()).toEqual([]);
+  expect((screen.getByRole('button', { name: '추가' }) as HTMLButtonElement).disabled).toBe(false);
+});

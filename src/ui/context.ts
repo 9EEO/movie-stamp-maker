@@ -8,6 +8,11 @@ export type Overlay = { kind: 'crop'; stampId: string } | { kind: 'detail'; stam
 export interface AppContextValue {
   open(o: Overlay): void;
   close(): void;
+  /**
+   * 화면 위 대화상자를 history에 한 칸 쌓는다. 뒤로가기나 dismiss()로 닫히면 onBack이 불린다.
+   * 버튼으로 고를 때는 고른 값을 기억해 두고 dismiss()를 부른다.
+   */
+  pushModal(onBack: () => void): { dismiss(): void };
   /** 우표 데이터가 바뀌었음을 알린다. 목록들은 `version`이 바뀌면 다시 읽는다. */
   refresh(): void;
   version: number;

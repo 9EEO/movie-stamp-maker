@@ -131,3 +131,24 @@ test('import applies backup calibration only when this device is not calibrated'
   await importBackup(backup);
   expect((await getSettings()).calibration).toEqual(mine);
 });
+
+test('export records whether this device was calibrated', async () => {
+  await saveSettings({ calibrated: true });
+  expect((await readJson(await exportBackup())).calibrated).toBe(true);
+});
+
+test('importing a backup from an uncalibrated device keeps the calibration prompt on', async () => {
+  const backup = await exportBackup(); // 보정 안 한 기기
+  await resetDb();
+  await importBackup(backup);
+  expect((await getSettings()).calibrated).toBe(false);
+});
+
+test('older backup without the calibrated flag is treated as uncalibrated', async () => {
+  const json = await readJson(await exportBackup());
+  delete json.calibrated;
+  json.calibration = { scalePct: 103, offsetXMm: 1, offsetYMm: 1 };
+  await resetDb();
+  await importBackup(new Blob([JSON.stringify(json)]));
+  expect(await getSettings()).toMatchObject({ calibrated: false, calibration: DEFAULT_CALIBRATION });
+});

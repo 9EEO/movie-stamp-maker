@@ -39,7 +39,8 @@ export default defineConfig({
             options: {
               cacheName: 'tmdb-images',
               expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
+              // 불투명(opaque) 응답은 출력용 CORS fetch에 쓸 수 없으니 캐시하지 않는다
+              cacheableResponse: { statuses: [200] },
             },
           },
         ],

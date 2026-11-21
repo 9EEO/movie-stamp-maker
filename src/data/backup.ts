@@ -12,6 +12,8 @@ interface BackupFile {
   /** blob id → data URL */
   blobs: Record<string, string>;
   calibration: Calibration;
+  /** 내보낸 기기가 테스트 시트로 보정했는지. 없으면(이전 백업) false로 본다 */
+  calibrated?: boolean;
 }
 
 export class BackupError extends Error {
@@ -54,8 +56,8 @@ export async function exportBackup(): Promise<Blob> {
     const blob = await db.get('blobs', s.blobId);
     if (blob) blobs[s.blobId] = await blobToDataUrl(blob);
   }
-  const { calibration } = await getSettings();
-  const file: BackupFile = { app: APP, version: VERSION, exportedAt: Date.now(), stamps, blobs, calibration };
+  const { calibration, calibrated } = await getSettings();
+  const file: BackupFile = { app: APP, version: VERSION, exportedAt: Date.now(), stamps, blobs, calibration, calibrated };
   return new Blob([JSON.stringify(file)], { type: 'application/json' });
 }
 
@@ -105,7 +107,12 @@ async function parseBackup(file: Blob): Promise<BackupFile & { blobData: Map<str
     throw new BackupError('지원하지 않는 백업 버전이에요');
   }
   const { stamps, blobs, calibration } = json;
-  if (!Array.isArray(stamps) || !isObject(blobs) || !isCalibration(calibration)) {
+  if (
+    !Array.isArray(stamps) ||
+    !isObject(blobs) ||
+    !isCalibration(calibration) ||
+    !isOptional(json.calibrated, (v) => typeof v === 'boolean')
+  ) {
     throw new BackupError('백업 파일 형식이 올바르지 않아요');
   }
   if (!stamps.every((s) => isStamp(s, blobs))) throw new BackupError('우표 정보가 올바르지 않아요');
@@ -122,7 +129,7 @@ const dupKey = (s: Stamp) => (s.tmdbId === undefined ? null : `${s.tmdbId}:${s.c
 /**
  * 백업을 합친다. 같은 id이거나 (tmdbId, createdAt)가 같은 우표는 건너뛴다.
  * 대기열 항목은 기존 대기열 뒤에 원래 순서대로 붙는다.
- * 보정값은 이 기기가 아직 보정하지 않았을 때만 가져온다.
+ * 보정값은 백업한 기기가 보정했고 이 기기는 아직 보정하지 않았을 때만 가져온다.
  */
 export async function importBackup(file: Blob): Promise<{ added: number; skipped: number }> {
   const backup = await parseBackup(file);
@@ -150,7 +157,7 @@ export async function importBackup(file: Blob): Promise<{ added: number; skipped
     await tx.objectStore('stamps').put({ ...s, queueOrder: orders.get(s.id) ?? s.queueOrder });
     if (s.blobId) await tx.objectStore('blobs').put(backup.blobData.get(s.blobId)!, s.blobId);
   }
-  if (!settings.calibrated) {
+  if (backup.calibrated === true && !settings.calibrated) {
     await tx.objectStore('settings').put({ ...settings, calibration: backup.calibration, calibrated: true }, 'settings');
   }
   await tx.done;

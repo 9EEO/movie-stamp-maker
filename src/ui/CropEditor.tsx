@@ -264,7 +264,7 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
                 aria-pressed={p === posterPath}
                 onClick={() => choosePoster(p)}
               >
-                <img src={posterUrl(p, 'w185')} alt="" loading="lazy" />
+                <img src={posterUrl(p, 'w185')} alt="" loading="lazy" crossOrigin="anonymous" />
               </button>
             ))}
           </div>

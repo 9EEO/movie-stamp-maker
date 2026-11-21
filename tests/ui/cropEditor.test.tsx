@@ -27,6 +27,7 @@ async function setup(opts: { size?: [number, number]; posters?: string[]; crop?:
   const ctx: AppContextValue = {
     open: vi.fn(),
     close: vi.fn(),
+    pushModal: vi.fn(() => ({ dismiss: vi.fn() })),
     refresh: vi.fn(),
     version: 0,
     settings: null,
@@ -106,4 +107,10 @@ test('choosing another poster changes posterPath and resets the crop', async () 
   const saved = await getStamp(stamp.id);
   expect(saved?.posterPath).toBe('/b.jpg');
   expect(saved?.crop).toEqual(DEFAULT_CROP);
+});
+
+test('poster choices are requested in CORS mode', async () => {
+  await setup();
+  const choice = await screen.findByRole('button', { name: '포스터 2' });
+  expect(choice.querySelector('img')?.getAttribute('crossorigin')).toBe('anonymous');
 });

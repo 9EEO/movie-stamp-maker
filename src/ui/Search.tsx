@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { DEFAULT_CROP } from '../core/crop';
 import { addStamp, findByTmdbId, putBlob } from '../data/db';
+import { prepareUpload } from '../platform/image';
 import { type MovieResult, type Tmdb, type TmdbErrorKind, TmdbError, posterUrl } from '../tmdb/client';
 
 interface Props {
@@ -43,13 +44,28 @@ function ErrorMessage({ kind, onOpenSettings }: { kind: TmdbErrorKind; onOpenSet
 function UploadForm({ file, onDone }: { file: File; onDone(stampId: string | null): void }) {
   const [title, setTitle] = useState(file.name.replace(/\.[^.]+$/, ''));
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const submit = async (e: Event) => {
     e.preventDefault();
     if (!title.trim() || busy) return;
     setBusy(true);
-    const blobId = await putBlob(file);
-    const stamp = await addStamp({ source: 'upload', title: title.trim(), blobId, crop: DEFAULT_CROP });
-    onDone(stamp.id);
+    setError(null);
+    let blob: Blob;
+    try {
+      blob = await prepareUpload(file);
+    } catch {
+      setError('이 사진을 열 수 없어요. JPG나 PNG로 다시 골라 주세요');
+      setBusy(false);
+      return;
+    }
+    try {
+      const blobId = await putBlob(blob);
+      const stamp = await addStamp({ source: 'upload', title: title.trim(), blobId, crop: DEFAULT_CROP });
+      onDone(stamp.id);
+    } catch {
+      setError('사진을 저장하지 못했어요. 저장 공간을 확인해 주세요');
+      setBusy(false);
+    }
   };
   return (
     <form class="upload-form" onSubmit={submit}>
@@ -65,6 +81,11 @@ function UploadForm({ file, onDone }: { file: File; onDone(stampId: string | nul
           취소
         </button>
       </div>
+      {error && (
+        <p class="note error" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }
@@ -165,7 +186,7 @@ export function Search({ tmdb, onOpenSettings, onAdded }: Props) {
             <li key={r.tmdbId}>
               <button class="result" disabled={!r.posterPath || adding} onClick={() => add(r)}>
                 {r.posterPath ? (
-                  <img class="result-thumb" src={posterUrl(r.posterPath, 'w185')} alt="" loading="lazy" />
+                  <img class="result-thumb" src={posterUrl(r.posterPath, 'w185')} alt="" loading="lazy" crossOrigin="anonymous" />
                 ) : (
                   <span class="result-thumb no-poster">포스터 없음</span>
                 )}

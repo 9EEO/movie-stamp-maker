@@ -10,6 +10,7 @@ beforeEach(async () => {
   await resetDb();
   sessionStorage.clear();
 });
+afterEach(() => vi.restoreAllMocks());
 afterAll(closeDb);
 
 function deps(overrides: Partial<QueueDeps> = {}): QueueDeps {
@@ -170,4 +171,42 @@ test('low resolution slot is marked', async () => {
   await addQueued(1);
   await setup(deps({ loadStampImage: vi.fn(async () => ({ width: 185, height: 278 }) as never) }));
   expect(await screen.findByLabelText('해상도 낮음')).toBeTruthy();
+});
+
+test('back closes the calibration dialog without output and without leaving', async () => {
+  await addQueued(1);
+  await saveSettings({ preferredOutput: 'save' });
+  const d = deps();
+  await setup(d);
+  const pushState = vi.spyOn(history, 'pushState');
+  await clickWhenReady('시트 1 저장');
+  await screen.findByText('테스트 시트를 먼저 출력해 보세요');
+  expect(pushState).toHaveBeenCalledTimes(1);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  await waitFor(() => expect(screen.queryByText('테스트 시트를 먼저 출력해 보세요')).toBeNull());
+  expect(d.saveSheet).not.toHaveBeenCalled();
+  expect(await titles()).toEqual(['영화1']);
+});
+
+test('choosing in a dialog removes its history entry', async () => {
+  await addQueued(1);
+  await saveSettings({ preferredOutput: 'save' });
+  const back = vi.spyOn(history, 'back').mockImplementation(() => window.dispatchEvent(new PopStateEvent('popstate')));
+  const d = deps();
+  await setup(d);
+  await clickWhenReady('시트 1 저장');
+  fireEvent.click(await screen.findByRole('button', { name: '그냥 진행' }));
+  await waitFor(() => expect(d.saveSheet).toHaveBeenCalledTimes(1));
+  expect(back).toHaveBeenCalledTimes(1);
+});
+
+test('back closes the output method question without saving a choice', async () => {
+  await addQueued(1);
+  await saveSettings({ calibrated: true });
+  await setup(deps());
+  await clickWhenReady('시트 1 저장');
+  await screen.findByText('어느 방법으로 출력하셨나요?');
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  await waitFor(() => expect(screen.queryByText('어느 방법으로 출력하셨나요?')).toBeNull());
+  expect((await getSettings()).preferredOutput).toBeUndefined();
 });

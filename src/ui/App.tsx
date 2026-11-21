@@ -10,19 +10,27 @@ import { ToastHost } from './Toast';
 
 export type { Overlay } from './context';
 
+type Entry = { kind: 'overlay'; overlay: Overlay } | { kind: 'modal'; onBack: () => void };
+
 /**
- * 오버레이 스택. 열 때 history에 한 칸을 쌓고, popstate(안드로이드 뒤로가기)가 오면 맨 위만 닫는다.
+ * 오버레이·대화상자 스택. 열 때 history에 한 칸을 쌓고, popstate(안드로이드 뒤로가기)가 오면 맨 위만 닫는다.
  * 닫기 버튼도 history.back()으로 닫아 history와 스택이 어긋나지 않게 한다.
  */
 export function useOverlays() {
-  const [stack, setStack] = useState<Overlay[]>([]);
-  const depth = useRef(0);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const ref = useRef<Entry[]>([]);
+  const update = (next: Entry[]) => {
+    ref.current = next;
+    setEntries(next);
+  };
 
   useEffect(() => {
     const onPop = () => {
-      if (depth.current === 0) return;
-      depth.current--;
-      setStack((s) => s.slice(0, -1));
+      const current = ref.current;
+      if (current.length === 0) return;
+      const top = current[current.length - 1];
+      update(current.slice(0, -1));
+      if (top.kind === 'modal') top.onBack();
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -30,15 +38,26 @@ export function useOverlays() {
 
   const open = useCallback((o: Overlay) => {
     history.pushState({ overlay: o.kind }, '');
-    depth.current++;
-    setStack((s) => [...s, o]);
+    update([...ref.current, { kind: 'overlay', overlay: o }]);
   }, []);
 
   const close = useCallback(() => {
-    if (depth.current > 0) history.back();
+    if (ref.current.length > 0) history.back();
   }, []);
 
-  return { stack, open, close };
+  const pushModal = useCallback((onBack: () => void) => {
+    const entry: Entry = { kind: 'modal', onBack };
+    history.pushState({ overlay: 'modal' }, '');
+    update([...ref.current, entry]);
+    return {
+      dismiss() {
+        if (ref.current[ref.current.length - 1] === entry) history.back();
+      },
+    };
+  }, []);
+
+  const stack = entries.flatMap((e) => (e.kind === 'overlay' ? [e.overlay] : []));
+  return { stack, open, close, pushModal };
 }
 
 function OverlayView({ overlay, close, settingsDeps }: { overlay: Overlay; close(): void; settingsDeps: SettingsDeps }) {
@@ -107,7 +126,7 @@ interface Props {
 const defaultMakeTmdb = (key: string) => createTmdb(key);
 
 export function App({ makeTmdb = defaultMakeTmdb }: Props) {
-  const { stack, open, close } = useOverlays();
+  const { stack, open, close, pushModal } = useOverlays();
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [version, setVersion] = useState(0);
 
@@ -131,7 +150,7 @@ export function App({ makeTmdb = defaultMakeTmdb }: Props) {
   const settingsDeps = useMemo(() => ({ ...defaultSettingsDeps, makeTmdb }), [makeTmdb]);
   const installEvent = useInstallPrompt(settings);
 
-  const value: AppContextValue = { open, close, refresh, version, settings, reloadSettings, tmdb };
+  const value: AppContextValue = { open, close, pushModal, refresh, version, settings, reloadSettings, tmdb };
   const top = stack[stack.length - 1];
 
   return (

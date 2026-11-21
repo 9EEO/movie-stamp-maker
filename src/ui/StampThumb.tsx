@@ -32,6 +32,8 @@ export function StampThumb({ src, crop, alt, class: cls }: Props) {
             src={src}
             alt={alt}
             loading="lazy"
+            // CORS 모드로 받아야 서비스 워커 캐시가 출력용 fetch와 같이 쓰인다
+            crossOrigin="anonymous"
             draggable={false}
             class={style ? undefined : 'stamp-cover'}
             style={style}

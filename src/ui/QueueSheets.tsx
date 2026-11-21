@@ -60,7 +60,10 @@ function markCalibrationAsked() {
   }
 }
 
-type Dialog = { kind: 'calibrate'; resolve(go: boolean): void } | { kind: 'preferred' } | null;
+type Dialog =
+  | { kind: 'calibrate'; choose(choice: 'calibrate' | 'proceed'): void }
+  | { kind: 'preferred'; choose(preferred: 'share' | 'save' | null): void }
+  | null;
 
 const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_PX = 10;
@@ -89,7 +92,7 @@ function SheetPreview({
 }
 
 export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
-  const { open, refresh, version, settings, reloadSettings } = useApp();
+  const { open, pushModal, refresh, version, settings, reloadSettings } = useApp();
   const [queue, setQueue] = useState<Stamp[] | null>(null);
   const [images, setImages] = useState(new Map<string, Loaded>());
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -154,15 +157,46 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
     refresh();
   };
 
-  const askCalibration = () => new Promise<boolean>((resolve) => setDialog({ kind: 'calibrate', resolve }));
+  // 대화상자는 history에 한 칸을 쌓아, 뒤로가기를 누르면 앱을 나가지 않고 대화상자만 닫힌다(= 취소)
+  const askCalibration = () =>
+    new Promise<'calibrate' | 'proceed' | 'cancel'>((resolve) => {
+      let picked: 'calibrate' | 'proceed' | 'cancel' = 'cancel';
+      const modal = pushModal(() => {
+        setDialog(null);
+        resolve(picked);
+      });
+      setDialog({
+        kind: 'calibrate',
+        choose(choice) {
+          picked = choice;
+          modal.dismiss();
+        },
+      });
+    });
+
+  const askPreferred = () => {
+    let picked: 'share' | 'save' | null = null;
+    const modal = pushModal(() => {
+      setDialog(null);
+      if (picked) savePreferred(picked);
+    });
+    setDialog({
+      kind: 'preferred',
+      choose(choice) {
+        picked = choice;
+        modal.dismiss();
+      },
+    });
+  };
 
   const output = async (sheetIndex: number, how: 'share' | 'save') => {
     if (busy) return;
     if (settings && !settings.calibrated && !calibrationAsked()) {
+      const choice = await askCalibration();
+      // 뒤로가기로 닫으면 출력도 하지 않고, 다음에 다시 묻는다
+      if (choice === 'cancel') return;
       markCalibrationAsked();
-      const goCalibrate = await askCalibration();
-      setDialog(null);
-      if (goCalibrate) {
+      if (choice === 'calibrate') {
         open({ kind: 'settings' });
         return;
       }
@@ -198,7 +232,7 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
           refresh();
         },
       });
-      if (!settings?.preferredOutput) setDialog({ kind: 'preferred' });
+      if (!settings?.preferredOutput) askPreferred();
     } catch {
       showToast('시트를 만들지 못했어요');
     } finally {
@@ -206,9 +240,7 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
     }
   };
 
-  const choosePreferred = async (preferred: 'share' | 'save' | null) => {
-    setDialog(null);
-    if (!preferred) return;
+  const savePreferred = async (preferred: 'share' | 'save') => {
     await saveSettings({ preferredOutput: preferred });
     await reloadSettings();
   };
@@ -387,10 +419,10 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
             <p>테스트 시트를 먼저 출력해 보세요</p>
             <p class="muted">인화지와 펀칭 위치가 맞는지 확인한 뒤 출력하면 카트리지를 아낄 수 있어요.</p>
             <div class="row">
-              <button class="btn primary" onClick={() => dialog.resolve(true)}>
+              <button class="btn primary" onClick={() => dialog.choose('calibrate')}>
                 보정하러 가기
               </button>
-              <button class="btn" onClick={() => dialog.resolve(false)}>
+              <button class="btn" onClick={() => dialog.choose('proceed')}>
                 그냥 진행
               </button>
             </div>
@@ -404,14 +436,14 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
             <p>어느 방법으로 출력하셨나요?</p>
             <div class="row">
               {shareOk && (
-                <button class="btn" onClick={() => choosePreferred('share')}>
+                <button class="btn" onClick={() => dialog.choose('share')}>
                   공유로 출력
                 </button>
               )}
-              <button class="btn" onClick={() => choosePreferred('save')}>
+              <button class="btn" onClick={() => dialog.choose('save')}>
                 저장해서 출력
               </button>
-              <button class="btn" onClick={() => choosePreferred(null)}>
+              <button class="btn" onClick={() => dialog.choose(null)}>
                 아직 모르겠어요
               </button>
             </div>
