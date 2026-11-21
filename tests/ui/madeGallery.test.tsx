@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { fireEvent, render, screen, waitFor } from '@testing-library/preact';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/preact';
 import { DEFAULT_CROP } from '../../src/core/crop';
 import { addStamp, closeDb, getStamp, listMade, listQueue, markMade } from '../../src/data/db';
 import { MadeGallery, StampDetail } from '../../src/ui/MadeGallery';
@@ -98,11 +98,14 @@ test('대기열로 되돌리기 moves the stamp back to the queue', async () => 
 
 test('삭제 only after confirmation', async () => {
   const s = await made('이웃집 토토로', 300);
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
   renderDetail(s.id);
   fireEvent.click(await screen.findByRole('button', { name: '삭제' }));
-  expect(confirm).toHaveBeenCalledTimes(1);
+  const dialog = await screen.findByRole('alertdialog', { name: '삭제 확인' });
+  expect(dialog.textContent).toContain('되돌릴 수 없어요');
+  fireEvent.click(within(dialog).getByRole('button', { name: '취소' }));
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
   expect(await getStamp(s.id)).toBeDefined();
   fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+  fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '지우기' }));
   await waitFor(async () => expect(await getStamp(s.id)).toBeUndefined());
 });

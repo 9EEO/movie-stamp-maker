@@ -10,6 +10,7 @@ import {
   returnToQueue,
 } from '../data/db';
 import { posterUrl } from '../tmdb/client';
+import { useConfirm } from './ConfirmDialog';
 import { useApp } from './context';
 import { OverlayFrame } from './OverlayFrame';
 import { StampThumb } from './StampThumb';
@@ -93,6 +94,7 @@ export function StampDetail({ stampId }: { stampId: string }) {
   const [stamp, setStamp] = useState<Stamp | null>(null);
   const [busy, setBusy] = useState(false);
   const src = useStampSrc(stamp, 'w780');
+  const [confirm, confirmDialog] = useConfirm();
 
   useEffect(() => {
     getStamp(stampId).then((s) => setStamp(s ?? null));
@@ -136,7 +138,7 @@ export function StampDetail({ stampId }: { stampId: string }) {
 
   const remove = (s: Stamp) =>
     run(async () => {
-      if (!window.confirm(`'${s.title}' 우표를 지울까요? 되돌릴 수 없어요.`)) return;
+      if (!(await confirm(`'${s.title}' 우표를 지울까요? 되돌릴 수 없어요.`, '지우기'))) return;
       await deleteStamp(s.id);
       refresh();
       close();
@@ -179,6 +181,7 @@ export function StampDetail({ stampId }: { stampId: string }) {
           </div>
         </div>
       )}
+      {confirmDialog}
     </OverlayFrame>
   );
 }

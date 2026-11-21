@@ -14,6 +14,7 @@ import {
 } from '../data/db';
 import { type ImageLike, loadStampImage } from '../platform/image';
 import { canShareFiles, saveSheet, shareSheet, sheetFileName } from '../platform/output';
+import { useConfirm } from './ConfirmDialog';
 import { useApp } from './context';
 import { showToast } from './Toast';
 
@@ -102,6 +103,7 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
   const [overId, setOverId] = useState<string | null>(null);
   const drag = useRef<{ id: string; x: number; y: number; timer: number; active: boolean } | null>(null);
   const suppressClick = useRef(false);
+  const [confirm, confirmDialog] = useConfirm();
 
   const cal = settings?.calibration ?? DEFAULT_CALIBRATION;
   const shareOk = deps.canShareFiles();
@@ -152,7 +154,7 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
 
   const remove = async (s: Stamp) => {
     setMenuFor(null);
-    if (!window.confirm(`'${s.title}'을(를) 대기열에서 지울까요?`)) return;
+    if (!(await confirm(`'${s.title}'을(를) 대기열에서 지울까요?`, '지우기'))) return;
     await deleteStamp(s.id);
     refresh();
   };
@@ -450,6 +452,8 @@ export function QueueSheets({ deps = defaultDeps }: { deps?: QueueDeps }) {
           </div>
         </div>
       )}
+
+      {confirmDialog}
     </section>
   );
 }

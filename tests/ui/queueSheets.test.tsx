@@ -149,14 +149,28 @@ test('after the first output it asks which method worked and remembers it', asyn
 test('slot menu deletes after confirmation only', async () => {
   await addQueued(2);
   await setup(deps());
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
   fireEvent.click(screen.getByRole('button', { name: '영화1 메뉴' }));
   fireEvent.click(screen.getByRole('menuitem', { name: '삭제' }));
+  const dialog = await screen.findByRole('alertdialog', { name: '삭제 확인' });
+  expect(dialog.textContent).toContain("'영화1'을(를) 대기열에서 지울까요?");
+  fireEvent.click(within(dialog).getByRole('button', { name: '취소' }));
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
   expect(await titles()).toEqual(['영화1', '영화2']);
   fireEvent.click(screen.getByRole('button', { name: '영화1 메뉴' }));
   fireEvent.click(screen.getByRole('menuitem', { name: '삭제' }));
+  fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '지우기' }));
   await waitFor(async () => expect(await titles()).toEqual(['영화2']));
-  expect(confirm).toHaveBeenCalledTimes(2);
+});
+
+test('back closes the delete question without deleting', async () => {
+  await addQueued(1);
+  await setup(deps());
+  fireEvent.click(screen.getByRole('button', { name: '영화1 메뉴' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '삭제' }));
+  await screen.findByRole('alertdialog', { name: '삭제 확인' });
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+  expect(await titles()).toEqual(['영화1']);
 });
 
 test('slot menu moves a stamp later in the queue', async () => {
