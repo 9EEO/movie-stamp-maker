@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'preact/hooks';
-import { listMade, listQueue } from '../data/db';
+import { listMade } from '../data/db';
 import { useApp } from './context';
+import { QueueSheets } from './QueueSheets';
 import { Search } from './Search';
 
 export function Home() {
   const { open, refresh, tmdb, version } = useApp();
-  const [counts, setCounts] = useState<{ queue: number; made: number } | null>(null);
+  const [madeCount, setMadeCount] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([listQueue(), listMade()]).then(([q, m]) => setCounts({ queue: q.length, made: m.length }));
+    listMade().then((m) => setMadeCount(m.length));
   }, [version]);
 
   return (
@@ -31,14 +32,11 @@ export function Home() {
         }}
       />
 
-      <section class="section" aria-label="출력 대기">
-        <h2>출력 대기</h2>
-        <p class="muted">{counts ? `${counts.queue}개` : ''}</p>
-      </section>
+      <QueueSheets />
 
       <section class="section" aria-label="만든 우표">
         <h2>만든 우표</h2>
-        <p class="muted">{counts ? `${counts.made}개` : ''}</p>
+        <p class="muted">{madeCount === null ? '' : `${madeCount}개`}</p>
       </section>
     </div>
   );
