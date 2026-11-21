@@ -57,6 +57,19 @@ export function closeDb(): void {
   dbPromise = null;
 }
 
+/**
+ * UUID v4. crypto.randomUUID는 보안 컨텍스트(HTTPS·localhost)에서만 있어서,
+ * 폰에서 http://<IP>로 열면 없다. 그때는 getRandomValues로 만든다.
+ */
+function newId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const hex = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function nextQueueOrder(queued: Stamp[]): number {
   return queued.reduce((max, s) => Math.max(max, s.queueOrder + 1), 0);
 }
@@ -68,7 +81,7 @@ export async function addStamp(input: NewStamp): Promise<Stamp> {
   const queued = await tx.store.index('status').getAll('queued');
   const stamp: Stamp = {
     ...input,
-    id: crypto.randomUUID(),
+    id: newId(),
     status: 'queued',
     queueOrder: nextQueueOrder(queued),
     createdAt: Date.now(),
@@ -173,7 +186,7 @@ export async function findByTmdbId(tmdbId: number): Promise<Stamp[]> {
 
 export async function putBlob(blob: Blob): Promise<string> {
   const db = await getDb();
-  const id = crypto.randomUUID();
+  const id = newId();
   await db.put('blobs', blob, id);
   return id;
 }

@@ -156,3 +156,24 @@ test('saveSettings merges the patch', async () => {
 });
 
 afterAll(closeDb);
+
+describe('without crypto.randomUUID (plain http on a phone is not a secure context)', () => {
+  const original = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(crypto), 'randomUUID');
+  beforeEach(() => {
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+  });
+  afterEach(() => {
+    delete (crypto as { randomUUID?: unknown }).randomUUID;
+    if (original) expect(typeof crypto.randomUUID).toBe('function');
+  });
+
+  test('addStamp and putBlob still create unique UUID ids', async () => {
+    expect(crypto.randomUUID).toBeUndefined();
+    const a = await tmdb('a');
+    const b = await tmdb('b');
+    const blobId = await putBlob(new Blob(['x']));
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    for (const id of [a.id, b.id, blobId]) expect(id).toMatch(uuid);
+    expect(new Set([a.id, b.id, blobId]).size).toBe(3);
+  });
+});
