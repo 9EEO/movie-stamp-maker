@@ -762,3 +762,34 @@ img {
 .install-banner p {
   margin: 0 0 8px;
 }
+
+/* 사진 여러 장 올리기 */
+.upload-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.upload-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-thumb {
+  flex: none;
+  width: 40px;
+  height: 52px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--line);
+}
+
+.upload-item input {
+  flex: 1;
+  min-width: 0;
+}
