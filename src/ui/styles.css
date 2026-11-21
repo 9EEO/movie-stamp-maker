@@ -663,3 +663,102 @@ img {
 .btn.danger {
   color: #b42318;
 }
+
+/* 설정 */
+.settings {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-section {
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.settings-section h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.settings-section .muted {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+}
+
+.settings-section a {
+  color: var(--accent);
+}
+
+.steps {
+  padding-left: 1.2em;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.field span {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.field input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  min-width: 0;
+}
+
+.field-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.calibration-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.calibration-form .btn {
+  grid-column: 1 / -1;
+}
+
+.note {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+}
+
+.note.ok {
+  color: #1f7a3a;
+}
+
+.note.error {
+  color: #b42318;
+}
+
+.install-banner {
+  margin: 8px 16px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: #fbe8cc;
+}
+
+.install-banner p {
+  margin: 0 0 8px;
+}
