@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
-import { BLEED_RECT, type Crop, DEFAULT_CROP, clampCrop, isLowRes, placeImage } from '../core/crop';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { BLEED_RECT, type Crop, DEFAULT_CROP, clampCrop, imagePointAt, isLowRes, placeImage } from '../core/crop';
 import { STAMP_H_MM, STAMP_W_MM } from '../core/layout';
+import { type Pixels, colorAt, dominantColors, edgeColor, marginSides } from '../core/palette';
 import { type Stamp, getStamp, updateStamp } from '../data/db';
-import { type ImageLike, loadStampImage as defaultLoad } from '../platform/image';
+import { type ImageLike, loadStampImage as defaultLoad, samplePixels as readPixels } from '../platform/image';
 import { posterUrl } from '../tmdb/client';
 import { useApp } from './context';
 import { OverlayFrame } from './OverlayFrame';
@@ -13,13 +14,18 @@ interface Props {
   stampId: string;
   onDone(): void;
   loadStampImage?: (stamp: Stamp) => Promise<ImageLike>;
+  /** 추천 색과 스포이드에 쓸 픽셀. 읽을 수 없으면 null */
+  samplePixels?: (img: ImageLike) => Pixels | null;
 }
+
+const WHITE = '#ffffff';
+const defaultSample = (img: ImageLike) => readPixels(img, 160);
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 8;
 
 /** 무대(stage) 안에서 칼선 틀의 위치. k = 화면 px / mm */
-function frameLayout(stageW: number, stageH: number) {
+export function frameLayout(stageW: number, stageH: number) {
   const fw = Math.min(stageW * 0.8, stageH * 0.85 * (STAMP_W_MM / STAMP_H_MM));
   const fh = fw * (STAMP_H_MM / STAMP_W_MM);
   return { k: fw / STAMP_W_MM, fx: (stageW - fw) / 2, fy: (stageH - fh) / 2 };
@@ -38,7 +44,7 @@ function draw(canvas: HTMLCanvasElement, img: ImageLike, crop: Crop, w: number, 
 
   // 이후 좌표는 세로 우표 좌표계(mm), 원점 = 칼선 왼쪽 위
   ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * fx, dpr * fy);
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = crop.bg ?? WHITE;
   ctx.fillRect(BLEED_RECT.xMm, BLEED_RECT.yMm, BLEED_RECT.wMm, BLEED_RECT.hMm);
   const r = placeImage(img.width, img.height, crop);
   ctx.imageSmoothingQuality = 'high';
@@ -61,7 +67,7 @@ function draw(canvas: HTMLCanvasElement, img: ImageLike, crop: Crop, w: number, 
   ctx.strokeRect(0, 0, STAMP_W_MM, STAMP_H_MM);
 }
 
-export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Props) {
+export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad, samplePixels = defaultSample }: Props) {
   const { tmdb } = useApp();
   const [stamp, setStamp] = useState<Stamp | null>(null);
   const [posterPath, setPosterPath] = useState<string | undefined>();
@@ -71,6 +77,7 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
   const [posters, setPosters] = useState<string[]>([]);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [saving, setSaving] = useState(false);
+  const [picking, setPicking] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -122,6 +129,14 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
     return () => ro.disconnect();
   }, []);
 
+  const pixels = useMemo(() => (img ? samplePixels(img) : null), [img, samplePixels]);
+  // 여백 추천 색: 여백이 닿는 가장자리 색, 그리고 포스터에서 많이 쓰인 색
+  const suggestions = useMemo(() => {
+    if (!img || !pixels) return null;
+    const edge = edgeColor(pixels, marginSides(img.width, img.height));
+    return { edge, palette: dominantColors(pixels, 3, [WHITE, edge]) };
+  }, [img, pixels]);
+
   useEffect(() => {
     if (canvasRef.current && img && size.w > 0) draw(canvasRef.current, img, crop, size.w, size.h);
   }, [img, crop, size]);
@@ -141,7 +156,26 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
     return k > 0 ? 1 / k : 1;
   };
 
+  const setBg = (bg: string) => setCrop((c) => ({ ...c, bg }));
+
+  /** 스포이드: 탭한 곳이 포스터 위면 그 색을 여백 색으로 */
+  const pick = (e: PointerEvent) => {
+    const rect = stageRef.current?.getBoundingClientRect();
+    const i = imgRef.current;
+    if (!rect || !i || !pixels) return;
+    const { k, fx, fy } = frameLayout(rect.width, rect.height);
+    if (k <= 0) return;
+    const p = imagePointAt(i.width, i.height, crop, (e.clientX - rect.left - fx) / k, (e.clientY - rect.top - fy) / k);
+    if (!p) return;
+    setBg(colorAt(pixels, p.u, p.v));
+    setPicking(false);
+  };
+
   const onPointerDown = (e: PointerEvent) => {
+    if (picking) {
+      pick(e);
+      return;
+    }
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
   };
@@ -177,10 +211,18 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
 
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
+    if (picking) return;
     update((c) => ({ ...c, zoom: c.zoom * Math.exp(-e.deltaY * 0.002) }));
   };
 
-  const setMode = (mode: Crop['mode']) => setCrop({ mode, cx: 0.5, cy: 0.5, zoom: 1 });
+  // 위치는 처음으로 되돌리되 고른 여백 색은 남긴다. 여백 색이 없을 때 전체 보이기로 바꾸면 가장자리 색을 넣는다
+  const setMode = (mode: Crop['mode']) => {
+    setPicking(false);
+    setCrop((c) => {
+      const bg = c.bg ?? (mode === 'fit' ? suggestions?.edge : undefined);
+      return { mode, cx: 0.5, cy: 0.5, zoom: 1, ...(bg ? { bg } : {}) };
+    });
+  };
 
   const choosePoster = (path: string) => {
     if (path === posterPath) return;
@@ -196,6 +238,16 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
   };
 
   const lowRes = img ? isLowRes(img.width, img.height, crop) : false;
+  const currentBg = crop.bg ?? WHITE;
+  const swatches = [
+    { label: '흰색', color: WHITE },
+    ...(suggestions
+      ? [
+          { label: '가장자리 색', color: suggestions.edge },
+          ...suggestions.palette.map((color, i) => ({ label: `포스터 색 ${i + 1}`, color })),
+        ]
+      : []),
+  ];
 
   return (
     <OverlayFrame
@@ -221,6 +273,7 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
           <canvas ref={canvasRef} class="crop-canvas" />
           {!img && !loadError && <p class="crop-status">불러오는 중…</p>}
           {loadError && <p class="crop-status">이미지를 불러올 수 없어요</p>}
+          {picking && <p class="crop-hint">포스터를 눌러 색을 고르세요</p>}
         </div>
 
         {lowRes && (
@@ -237,6 +290,43 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad }: Pr
             전체 보이기
           </button>
         </div>
+
+        {crop.mode === 'fit' && (
+          <div class="margin-row" role="group" aria-label="여백 색">
+            <span class="margin-label">여백</span>
+            {swatches.map(({ label, color }) => (
+              <button
+                key={label}
+                class="swatch"
+                aria-label={label}
+                title={label}
+                aria-pressed={currentBg === color}
+                style={{ background: color }}
+                onClick={() => setBg(color)}
+              />
+            ))}
+            {pixels && (
+              <button
+                class="swatch-tool"
+                aria-label="스포이드"
+                title="스포이드"
+                aria-pressed={picking}
+                onClick={() => setPicking((p) => !p)}
+              >
+                🎯
+              </button>
+            )}
+            <label class="swatch-tool" title="직접 고르기">
+              🎨
+              <input
+                type="color"
+                aria-label="직접 고르기"
+                value={currentBg}
+                onInput={(e) => setBg(e.currentTarget.value)}
+              />
+            </label>
+          </div>
+        )}
 
         <label class="zoom-row">
           <span>확대</span>

@@ -1,3 +1,4 @@
+import type { Pixels } from '../core/palette';
 import type { Stamp } from '../data/db';
 import { getBlob } from '../data/db';
 import { posterUrl } from '../tmdb/client';
@@ -71,4 +72,22 @@ export async function prepareUpload(file: Blob): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('사진을 줄이지 못했어요'))), 'image/jpeg', 0.92);
   });
+}
+
+/** 긴 변을 maxEdge로 줄여 픽셀을 읽는다. 읽을 수 없으면(캔버스 없음, 보안 오류) null */
+export function samplePixels(img: ImageLike, maxEdge: number): Pixels | null {
+  try {
+    const k = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    const width = Math.max(1, Math.round(img.width * k));
+    const height = Math.max(1, Math.round(img.height * k));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, width, height);
+    return { data: ctx.getImageData(0, 0, width, height).data, width, height };
+  } catch {
+    return null;
+  }
 }

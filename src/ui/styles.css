@@ -409,6 +409,71 @@ img {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
 
+.crop-hint {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* 전체 보이기 여백 색 */
+.margin-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.margin-label {
+  flex: none;
+  font-size: 0.9rem;
+}
+
+.swatch,
+.swatch-tool {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.swatch[aria-pressed='true'],
+.swatch-tool[aria-pressed='true'] {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.swatch-tool {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 색 선택 창은 🎨 위에 투명하게 덮어 탭을 받는다 */
+.swatch-tool input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .zoom-row {
   display: flex;
   align-items: center;
