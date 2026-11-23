@@ -80,3 +80,9 @@ test('imagePointAt maps a stamp point to image coords and rejects points outside
   expect(imagePointAt(780, 1170, crop, STAMP_W_MM / 2, STAMP_H_MM / 2)).toEqual({ u: 0.5, v: 0.5 });
   expect(imagePointAt(780, 1170, crop, 0.5, STAMP_H_MM / 2)).toBeNull();
 });
+
+test('clampCrop keeps the margin color', () => {
+  const crop: Crop = { mode: 'fit', cx: 0.5, cy: 0.5, zoom: 1, bg: '#123456' };
+  expect(clampCrop(780, 1170, crop).bg).toBe('#123456');
+  expect(clampCrop(780, 1170, { ...crop, mode: 'fill', cx: 2 }).bg).toBe('#123456');
+});

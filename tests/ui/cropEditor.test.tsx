@@ -242,3 +242,28 @@ test('without readable pixels only white and custom are offered', async () => {
   await finish(onDone);
   expect(await savedBg(stamp.id)).toBeUndefined();
 });
+
+test('reopening a fit stamp keeps its saved bg', async () => {
+  const { stamp, onDone } = await setup({ crop: { mode: 'fit', cx: 0.5, cy: 0.5, zoom: 1, bg: '#123456' } });
+  await waitFor(() => expect(marginRow()).toBeTruthy());
+  await finish(onDone);
+  expect(await savedBg(stamp.id)).toBe('#123456');
+});
+
+test('zooming after picking a color keeps the color', async () => {
+  const { stamp, onDone } = await setup();
+  await toFit();
+  fireEvent.click(await screen.findByRole('button', { name: '포스터 색 2' }));
+  fireEvent.input(screen.getByRole('slider', { name: '확대' }), { target: { value: '2' } });
+  await finish(onDone);
+  expect(await savedBg(stamp.id)).toBe('#202020');
+});
+
+test('choosing another poster turns the eyedropper off', async () => {
+  await setup();
+  await toFit();
+  fireEvent.click(screen.getByRole('button', { name: '스포이드' }));
+  expect(screen.getByText('포스터를 눌러 색을 고르세요')).toBeTruthy();
+  fireEvent.click(await screen.findByRole('button', { name: '포스터 2' }));
+  await waitFor(() => expect(screen.queryByText('포스터를 눌러 색을 고르세요')).toBeNull());
+});

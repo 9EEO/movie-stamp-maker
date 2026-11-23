@@ -226,6 +226,7 @@ export function CropEditor({ stampId, onDone, loadStampImage = defaultLoad, samp
 
   const choosePoster = (path: string) => {
     if (path === posterPath) return;
+    setPicking(false);
     setPosterPath(path);
     setCrop(DEFAULT_CROP);
   };

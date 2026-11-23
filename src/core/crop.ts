@@ -76,14 +76,14 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 export function clampCrop(imgW: number, imgH: number, crop: Crop): Crop {
   const zoom = clamp(crop.zoom, MIN_ZOOM, MAX_ZOOM);
   if (crop.mode === 'fit') {
-    return { mode: 'fit', cx: clamp(crop.cx, 0, 1), cy: clamp(crop.cy, 0, 1), zoom };
+    return { ...crop, cx: clamp(crop.cx, 0, 1), cy: clamp(crop.cy, 0, 1), zoom };
   }
   // 번짐 사각형의 가장자리가 이미지 밖으로 나가지 않도록 중심을 제한한다.
   const { wMm, hMm } = placeImage(imgW, imgH, { ...crop, zoom });
   const marginX = BLEED_RECT.wMm / 2 / wMm;
   const marginY = BLEED_RECT.hMm / 2 / hMm;
   return {
-    mode: 'fill',
+    ...crop,
     cx: clamp(crop.cx, marginX, 1 - marginX),
     cy: clamp(crop.cy, marginY, 1 - marginY),
     zoom,
