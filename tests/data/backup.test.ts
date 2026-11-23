@@ -108,6 +108,17 @@ test('rejects non-JSON, wrong app, future version without touching data', async 
   expect(await listQueue()).toEqual(before);
 });
 
+test('import keeps a valid crop.bg and rejects a malformed one', async () => {
+  await tmdb('a');
+  const good = await readJson(await exportBackup());
+  await resetDb();
+  const withBg = (bg: string) => ({ ...good, stamps: [{ ...good.stamps[0], crop: { ...good.stamps[0].crop, mode: 'fit', bg } }] });
+  await expect(importBackup(new Blob([JSON.stringify(withBg('red'))]))).rejects.toBeInstanceOf(BackupError);
+  expect(await listQueue()).toEqual([]);
+  await importBackup(new Blob([JSON.stringify(withBg('#a1b2c3'))]));
+  expect((await listQueue())[0].crop.bg).toBe('#a1b2c3');
+});
+
 test('export never contains tmdbKey', async () => {
   await saveSettings({ tmdbKey: 'secret-key-123' });
   await tmdb('a');

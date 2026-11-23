@@ -26,7 +26,7 @@ export function StampThumb({ src, crop, alt, class: cls }: Props) {
   }
   return (
     <div class={`stamp ${cls ?? ''}`}>
-      <div class="stamp-face">
+      <div class="stamp-face" style={crop?.bg ? { background: crop.bg } : undefined}>
         {src ? (
           <img
             src={src}

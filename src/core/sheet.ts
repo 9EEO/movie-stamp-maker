@@ -43,8 +43,8 @@ export function paintSheet(ctx: CanvasRenderingContext2D, entries: (SheetEntry |
     ctx.beginPath();
     ctx.rect(xMm, yMm, wMm, hMm);
     ctx.clip();
-    // 전체 보이기 모드에서 남는 부분은 흰색
-    ctx.fillStyle = '#fff';
+    // 전체 보이기 모드에서 남는 부분은 우표마다 고른 여백 색(없으면 흰색)
+    ctx.fillStyle = entry.crop.bg ?? '#ffffff';
     ctx.fillRect(xMm, yMm, wMm, hMm);
     const r = placeImage(entry.image.width, entry.image.height, entry.crop);
     ctx.drawImage(entry.image, r.xMm, r.yMm, r.wMm, r.hMm);

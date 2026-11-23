@@ -53,6 +53,21 @@ test('paintSheet draws each filled slot with its slot matrix and bleed clip', ()
   expect(draws[0].args.slice(1)).toEqual([r.xMm, r.yMm, r.wMm, r.hMm]);
 });
 
+test('paintSheet fills a slot bleed with crop.bg, white when absent', () => {
+  const ctx = fakeCtx();
+  const fit = { mode: 'fit' as const, cx: 0.5, cy: 0.5, zoom: 1 };
+  paintSheet(
+    ctx,
+    [
+      { ...entry(1000, 1500), crop: { ...fit, bg: '#123456' } },
+      { ...entry(1000, 1500), crop: fit },
+    ],
+    DEFAULT_CALIBRATION,
+  );
+  const slotFills = ctx.calls.filter((c) => c.name === 'fillRect' && c.args[0] === BLEED_RECT.xMm);
+  expect(slotFills.map((c) => c.style)).toEqual(['#123456', '#ffffff']);
+});
+
 test('paintSheet restores state after every slot', () => {
   const ctx = fakeCtx();
   paintSheet(ctx, [entry(1000, 1500), entry(1000, 1500), entry(1000, 1500)], DEFAULT_CALIBRATION);

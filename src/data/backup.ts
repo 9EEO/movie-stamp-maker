@@ -87,6 +87,7 @@ function isStamp(v: unknown, blobs: Record<string, unknown>): v is Stamp {
     isNum(crop.cx) &&
     isNum(crop.cy) &&
     isNum(crop.zoom) &&
+    isOptional(crop.bg, (b) => isStr(b) && /^#[0-9a-f]{6}$/i.test(b)) &&
     (v.status === 'queued' || v.status === 'made') &&
     isNum(v.queueOrder) &&
     isNum(v.createdAt) &&
