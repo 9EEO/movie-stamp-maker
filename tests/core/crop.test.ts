@@ -1,4 +1,5 @@
-import { BLEED_RECT, DEFAULT_CROP, clampCrop, isLowRes, placeImage, type Crop } from '../../src/core/crop';
+import { BLEED_RECT, DEFAULT_CROP, clampCrop, imagePointAt, isLowRes, placeImage, type Crop } from '../../src/core/crop';
+import { STAMP_H_MM, STAMP_W_MM } from '../../src/core/layout';
 
 const closeTo = (n: number) => expect.closeTo(n, 3);
 
@@ -72,4 +73,10 @@ test('isLowRes', () => {
   expect(isLowRes(780, 1170, DEFAULT_CROP)).toBe(false); // TMDB w780
   expect(isLowRes(185, 278, DEFAULT_CROP)).toBe(true); // 썸네일 크기
   expect(isLowRes(780, 1170, { ...DEFAULT_CROP, zoom: 4 })).toBe(true);
+});
+
+test('imagePointAt maps a stamp point to image coords and rejects points outside', () => {
+  const crop: Crop = { mode: 'fit', cx: 0.5, cy: 0.5, zoom: 1 };
+  expect(imagePointAt(780, 1170, crop, STAMP_W_MM / 2, STAMP_H_MM / 2)).toEqual({ u: 0.5, v: 0.5 });
+  expect(imagePointAt(780, 1170, crop, 0.5, STAMP_H_MM / 2)).toBeNull();
 });

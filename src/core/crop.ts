@@ -3,12 +3,14 @@ import { BLEED_MM, PX_PER_MM, STAMP_H_MM, STAMP_W_MM } from './layout';
 /**
  * `cx`·`cy`: 우표 중심에 오는 원본 이미지 위의 점 (0~1 정규화).
  * `zoom`: 기본 배율 대비 배수 (≥ 1).
+ * `bg`: 전체 보이기에서 남는 여백의 색(`#rrggbb`). 없으면 흰색.
  */
 export interface Crop {
   mode: 'fill' | 'fit';
   cx: number;
   cy: number;
   zoom: number;
+  bg?: string;
 }
 
 export const DEFAULT_CROP: Crop = { mode: 'fill', cx: 0.5, cy: 0.5, zoom: 1 };
@@ -53,6 +55,20 @@ export function placeImage(imgW: number, imgH: number, crop: Crop): RectMm {
     wMm,
     hMm,
   };
+}
+
+/** 세로 우표 좌표(mm)의 한 점이 원본 이미지의 어디인지 (0~1). 이미지 밖이면 null */
+export function imagePointAt(
+  imgW: number,
+  imgH: number,
+  crop: Crop,
+  xMm: number,
+  yMm: number,
+): { u: number; v: number } | null {
+  const r = placeImage(imgW, imgH, crop);
+  const u = (xMm - r.xMm) / r.wMm;
+  const v = (yMm - r.yMm) / r.hMm;
+  return u >= 0 && u <= 1 && v >= 0 && v <= 1 ? { u, v } : null;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
